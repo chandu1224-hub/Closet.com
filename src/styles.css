@@ -153,3 +153,5 @@ body{overscroll-behavior:none}
   .page-footer{font-size:9px}
   .mannequin-stage{height:510px}
 }
+
+.mannequin-load-state{position:absolute;inset:0;z-index:3;display:grid;place-items:center;padding:20px;text-align:center;background:#171412;color:#c9bdb1;font:700 11px 'DM Sans';letter-spacing:1.4px;pointer-events:none}
