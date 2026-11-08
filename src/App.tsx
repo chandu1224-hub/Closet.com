@@ -78,8 +78,8 @@ export default function App() {
           {active === 'Today’s Look' ? (
             <>
               <div className="date-line">YOUR PERSONAL STYLE SPACE <span className="date-rule" /></div>
-              <div className="heading-row">
-                <div><p className="eyebrow">YOUR DAILY EDIT</p><h1>Today’s Look</h1><p className="subtitle">A little less deciding. A lot more living.</p></div>
+              <div className="screen-toolbar">
+                <div><p className="eyebrow">YOUR DAILY EDIT</p><p className="subtitle">A little less deciding. A lot more living.</p></div>
                 <button className="outline-button" onClick={() => setActive('Planner')}>VIEW PLANNER <span>↗</span></button>
               </div>
               <div className="look-grid">
@@ -87,7 +87,7 @@ export default function App() {
                 <div className="side-stack"><div className="mini-card"><span className="mini-number">01</span><div><p className="eyebrow">YOUR DIGITAL CLOSET</p><h3>Make it yours.</h3><p>Upload the clothes you already love. We’ll organize the rest.</p><button onClick={() => setActive('My Closet')}>EXPLORE CLOSET ↗</button></div></div><div className="quote-card"><span>“</span><p>Style is not about having more. It’s about making more of what you have.</p><small>THE CLOSET PHILOSOPHY</small></div></div>
               </div>
             </>
-          ) : active === 'My Closet' ? <><div className="page-intro"><p className="eyebrow">YOUR DIGITAL WARDROBE</p><h1>My Closet</h1><p className="subtitle">Everything you own, all in one place.</p></div><Wardrobe userId={session.user.id} /></> : (
+          ) : active === 'My Closet' ? <><div className="screen-toolbar closet-screen-toolbar"><div><p className="eyebrow">YOUR DIGITAL WARDROBE</p><p className="subtitle">Everything you own, all in one place.</p></div></div><Wardrobe userId={session.user.id} /></> : (
             <><div className="page-intro"><p className="eyebrow">YOUR PERSONAL STYLE SPACE</p><h1>{active}</h1><p className="subtitle">Your personal style, thoughtfully organized.</p></div><div className="empty-state"><div className="empty-icon">✳</div><h2>Coming together, one piece at a time.</h2><p>This space will be ready as we build your wardrobe foundation.</p><button className="primary-button" onClick={() => setActive('My Closet')}>START WITH MY CLOSET ↗</button></div></>
           )}
           <footer className="page-footer"><span>YOUR WARDROBE. YOUR STYLE. DECIDED.</span><span>MADE TO MAKE EVERY DAY EASIER.</span></footer>
