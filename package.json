@@ -11,7 +11,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.13",
@@ -20,6 +21,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "typescript": "~5.9.2",
     "vite": "^7.1.7",
-    "tailwindcss": "^4.1.13"
+    "tailwindcss": "^4.1.13",
+    "@types/three": "^0.180.0"
   }
 }
