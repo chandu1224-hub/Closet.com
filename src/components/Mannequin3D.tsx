@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 
@@ -6,20 +6,34 @@ type Props = { gender: 'male' | 'female' }
 
 export default function Mannequin3D({ gender }: Props) {
   const mountRef = useRef<HTMLDivElement>(null)
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
 
   useEffect(() => {
     const host = mountRef.current
     if (!host) return
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    } catch (error) {
+      console.error('WebGL is unavailable for the mannequin viewer', error)
+      setStatus('error')
+      return
+    }
 
+    let disposed = false
+    setStatus('loading')
     const scene = new THREE.Scene()
     scene.background = new THREE.Color('#171412')
-    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100)
-    camera.position.set(0, 1.0, 5.5)
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100)
+    camera.position.set(0, 1.55, 5.2)
+    camera.lookAt(0, 1.0, 0)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.domElement.style.width = '100%'
+    renderer.domElement.style.height = '100%'
+    renderer.domElement.style.display = 'block'
     host.appendChild(renderer.domElement)
 
     scene.add(new THREE.HemisphereLight(0xfff4e9, 0x30251f, 2.2))
@@ -38,28 +52,44 @@ export default function Mannequin3D({ gender }: Props) {
       new THREE.MeshStandardMaterial({ color: '#28221e', roughness: 0.95 }),
     )
     floor.rotation.x = -Math.PI / 2
-    floor.position.y = -0.02
+    floor.position.y = 0
     floor.receiveShadow = true
     scene.add(floor)
 
-    let disposed = false
+    const showError = (message: string) => {
+      console.error(message)
+      if (!disposed) setStatus('error')
+    }
+
     const loader = new GLTFLoader()
     loader.load(
       `/models/closet_${gender}_mannequin.glb`,
       (gltf) => {
         if (disposed) return
         const model = gltf.scene
-        model.position.y = -0.02
+        const bounds = new THREE.Box3().setFromObject(model)
+        if (bounds.isEmpty()) {
+          showError('The mannequin GLB contains no visible geometry.')
+          return
+        }
+        const size = bounds.getSize(new THREE.Vector3())
+        const center = bounds.getCenter(new THREE.Vector3())
+        const fitScale = 2.75 / Math.max(size.y, 0.01)
+        model.scale.setScalar(fitScale)
+        model.position.set(-center.x * fitScale, -bounds.min.y * fitScale + 0.04, -center.z * fitScale)
         model.traverse((object) => {
           if (object instanceof THREE.Mesh) {
             object.castShadow = true
             object.receiveShadow = true
+            if (Array.isArray(object.material)) object.material.forEach((m) => { m.needsUpdate = true })
+            else object.material.needsUpdate = true
           }
         })
         stage.add(model)
+        setStatus('ready')
       },
       undefined,
-      (error) => console.error(`Could not load ${gender} mannequin`, error),
+      (error) => showError(`Could not load /models/closet_${gender}_mannequin.glb: ${String(error)}`),
     )
 
     let dragging = false
@@ -120,10 +150,20 @@ export default function Mannequin3D({ gender }: Props) {
           materials.forEach((material) => material.dispose())
         }
       })
+      floor.geometry.dispose()
+      ;(floor.material as THREE.Material).dispose()
       renderer.dispose()
       renderer.domElement.remove()
     }
   }, [gender])
 
-  return <div ref={mountRef} className="mannequin-stage" aria-label={`${gender} 3D mannequin`} />
+  return (
+    <div ref={mountRef} className="mannequin-stage" aria-label={`${gender} 3D mannequin`}>
+      {status !== 'ready' && (
+        <div className="mannequin-load-state" role="status">
+          {status === 'loading' ? 'LOADING YOUR 3D MANNEQUIN…' : '3D VIEWER COULD NOT LOAD. PLEASE REFRESH.'}
+        </div>
+      )}
+    </div>
+  )
 }
