@@ -76,7 +76,7 @@ export default function App() {
         <a className="brand" href="#"><span className="brand-mark">C.</span><span>CLOSET<span className="brand-dot">.</span>COM</span></a>
         <p className="nav-label">YOUR SPACE</p>
         <nav>{navigation.map((item, i) => <button key={item} className={active === item ? 'nav-item active' : 'nav-item'} onClick={() => setActive(item)}><span className="nav-icon">{['◷','▦','◉','▤','◇','⚙'][i]}</span>{item}{item === 'Today’s Look' && <span className="nav-today" />}</button>)}</nav>
-        <div className="sidebar-bottom"><div className="avatar">{(session.user.email?.[0] ?? 'C').toUpperCase()}</div><div className="account-copy"><strong>{session.user.email}</strong><small>Personal style space</small></div><button className="signout" onClick={() => supabase.auth.signOut()} aria-label="Sign out">↗</button></div>
+        <div className="sidebar-bottom"><div className="avatar">{(session.user.email?.[0] ?? 'C').toUpperCase()}</div><div className="account-copy"><strong>{session.user.email}</strong><small>Personal style space</small></div><button className="signout" onClick={() => { void supabase?.auth.signOut() }} aria-label="Sign out">↗</button></div>
       </aside>
       <section className="main-area">
         <header className="topbar"><div className="breadcrumb">YOUR WARDROBE <span>/</span> <b>{active.toUpperCase()}</b></div><div className="top-actions"><span className="status"><i /> CONNECTED</span><div className="avatar small">{(session.user.email?.[0] ?? 'C').toUpperCase()}</div></div></header>
