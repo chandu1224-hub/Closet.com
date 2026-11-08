@@ -73,3 +73,9 @@ body{overscroll-behavior:none}
   .bottom-nav-item{font-size:10px}
   .bottom-nav-icon{font-size:19px}
 }
+
+.screen-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 20px}
+.screen-toolbar .eyebrow{margin:0 0 6px}
+.screen-toolbar .subtitle{margin:0}
+.closet-screen-toolbar{margin-bottom:17px}
+@media(max-width:650px){.screen-toolbar{margin-bottom:15px}.screen-toolbar .subtitle{font-size:10px}}
