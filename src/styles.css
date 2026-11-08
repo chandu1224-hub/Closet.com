@@ -79,3 +79,77 @@ body{overscroll-behavior:none}
 .screen-toolbar .subtitle{margin:0}
 .closet-screen-toolbar{margin-bottom:17px}
 @media(max-width:650px){.screen-toolbar{margin-bottom:15px}.screen-toolbar .subtitle{font-size:10px}}
+
+/* 3D mannequin home experience */
+.mannequin-home{border:1px solid #302b27;background:#11100f;padding:22px;border-radius:13px}
+.mannequin-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px}
+.mannequin-heading .eyebrow{margin-bottom:8px}
+.mannequin-heading h2{font:500 27px 'Playfair Display';margin:0;color:#f4eee7}
+.mannequin-heading .subtitle{font-size:13px;margin-top:7px}
+.gender-tabs{display:flex;gap:5px;padding:4px;background:#211c19;border:1px solid #39302b;border-radius:9px;flex-shrink:0}
+.gender-tabs button{border:0;border-radius:6px;background:transparent;color:#aaa097;padding:11px 16px;font:700 11px 'DM Sans';letter-spacing:1.1px;cursor:pointer}
+.gender-tabs button.selected{background:#e23e36;color:white;box-shadow:0 3px 12px #e23e3633}
+.mannequin-stage{height:440px;position:relative;overflow:hidden;border-radius:10px;background:#171412;touch-action:pan-y;cursor:grab}
+.mannequin-stage:active{cursor:grabbing}
+.mannequin-stage canvas{display:block;width:100%;height:100%}
+.mannequin-hint,.mannequin-look-label{position:absolute;z-index:2;pointer-events:none;font-size:10px;letter-spacing:1.4px;color:#a79b90}
+.mannequin-hint{left:18px;top:17px}
+.mannequin-look-label{right:18px;bottom:16px;display:flex;gap:10px;align-items:center}
+.mannequin-look-label span{color:#e65a50;font-weight:700}
+.mannequin-outfit-details{display:flex;justify-content:center;align-items:center;gap:13px;padding:16px 5px 4px;color:#b9afa4;font-size:10px;letter-spacing:1.2px;font-weight:700}
+.mannequin-outfit-details i{width:4px;height:4px;background:#df4b43;border-radius:50%}
+.create-closet-panel{margin-top:17px;padding:19px 20px;border:1px solid #39302b;background:#191513;display:flex;justify-content:space-between;align-items:center;gap:15px;border-radius:9px}
+.create-closet-panel .eyebrow{font-size:10px;margin-bottom:7px}
+.create-closet-panel h3{font:500 23px 'Playfair Display';margin:0;color:#f3ede6}
+.create-closet-panel p:not(.eyebrow){font-size:13px;color:#aaa097;line-height:1.55;margin:6px 0 0;max-width:480px}
+.create-closet-panel .primary-button{white-space:nowrap;font-size:10px;padding:14px 17px;margin:0}
+@media(max-width:650px){
+  .app-header .brand{font-size:12px;letter-spacing:1.4px}
+  .app-header .brand-mark{width:34px;height:34px;font-size:20px}
+  .header-kicker{font-size:9px;letter-spacing:1.2px}
+  .header-page-title strong{font-size:18px;max-width:40vw}
+  .header-status{font-size:9px}
+  .bottom-nav{min-height:76px;padding-top:8px}
+  .bottom-nav-item{font-size:10px;gap:6px}
+  .bottom-nav-icon{font-size:21px}
+  .page-footer{font-size:8px;letter-spacing:1px}
+  .content{padding-left:14px;padding-right:14px}
+  .date-line{font-size:9px}
+  .screen-toolbar .eyebrow,.page-intro .eyebrow{font-size:10px}
+  .screen-toolbar .subtitle,.page-intro .subtitle{font-size:13px}
+  .mannequin-home{padding:14px}
+  .mannequin-heading{align-items:flex-start;flex-direction:column}
+  .mannequin-heading h2{font-size:25px}
+  .mannequin-heading .subtitle{font-size:13px}
+  .gender-tabs{width:100%}
+  .gender-tabs button{flex:1;font-size:12px;padding:12px}
+  .mannequin-stage{height:390px}
+  .mannequin-hint,.mannequin-look-label{font-size:9px}
+  .mannequin-outfit-details{font-size:9px;gap:8px;flex-wrap:wrap}
+  .create-closet-panel{align-items:stretch;flex-direction:column;padding:17px}
+  .create-closet-panel h3{font-size:22px}
+  .create-closet-panel p:not(.eyebrow){font-size:13px}
+  .create-closet-panel .primary-button{width:100%;min-height:46px}
+  .card-top,.weather{font-size:9px}
+  .visual-kicker{font-size:10px}
+  .visual-copy p,.mini-card p:not(.eyebrow){font-size:12px}
+  .mini-card .eyebrow{font-size:9px}
+  .mini-card button,.quote-card small{font-size:9px}
+  .wardrobe-toolbar h2{font-size:23px}
+  .wardrobe-toolbar .subtitle{font-size:12px}
+  .upload-hint{font-size:9px}
+  .closet-filters button{font-size:9px}
+  .wardrobe-item-copy strong{font-size:12px}
+  .wardrobe-item-copy small{font-size:10px}
+}
+@media(min-width:651px){
+  .app-header .brand{font-size:15px}
+  .app-header .brand-mark{width:38px;height:38px;font-size:22px}
+  .header-kicker{font-size:9px}
+  .header-page-title strong{font-size:20px}
+  .header-status{font-size:10px}
+  .bottom-nav-item{font-size:12px}
+  .bottom-nav-icon{font-size:22px}
+  .page-footer{font-size:9px}
+  .mannequin-stage{height:510px}
+}
