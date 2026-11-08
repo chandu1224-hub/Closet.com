@@ -39,4 +39,91 @@ export default function Mannequin3D({ gender }: Props) {
     )
     floor.rotation.x = -Math.PI / 2
     floor.position.y = -0.02
-    floor.receiveS¶»§q«^
+    floor.receiveShadow = true
+    scene.add(floor)
+
+    let disposed = false
+    const loader = new GLTFLoader()
+    loader.load(
+      `/models/closet_${gender}_mannequin.glb`,
+      (gltf) => {
+        if (disposed) return
+        const model = gltf.scene
+        model.position.y = -0.02
+        model.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.castShadow = true
+            object.receiveShadow = true
+          }
+        })
+        stage.add(model)
+      },
+      undefined,
+      (error) => console.error(`Could not load ${gender} mannequin`, error),
+    )
+
+    let dragging = false
+    let previousX = 0
+    let rotationVelocity = 0
+    const onPointerDown = (event: PointerEvent) => {
+      dragging = true
+      previousX = event.clientX
+      renderer.domElement.setPointerCapture?.(event.pointerId)
+    }
+    const onPointerMove = (event: PointerEvent) => {
+      if (!dragging) return
+      const delta = event.clientX - previousX
+      previousX = event.clientX
+      rotationVelocity = delta * 0.008
+      stage.rotation.y += rotationVelocity
+    }
+    const onPointerUp = () => { dragging = false }
+    renderer.domElement.addEventListener('pointerdown', onPointerDown)
+    renderer.domElement.addEventListener('pointermove', onPointerMove)
+    renderer.domElement.addEventListener('pointerup', onPointerUp)
+    renderer.domElement.addEventListener('pointercancel', onPointerUp)
+
+    const resize = () => {
+      const width = Math.max(host.clientWidth, 1)
+      const height = Math.max(host.clientHeight, 1)
+      camera.aspect = width / height
+      camera.updateProjectionMatrix()
+      renderer.setSize(width, height, false)
+    }
+    const observer = new ResizeObserver(resize)
+    observer.observe(host)
+    resize()
+
+    let frame = 0
+    const animate = () => {
+      frame = requestAnimationFrame(animate)
+      if (!dragging) {
+        stage.rotation.y += 0.003 + rotationVelocity
+        rotationVelocity *= 0.94
+      }
+      renderer.render(scene, camera)
+    }
+    animate()
+
+    return () => {
+      disposed = true
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown)
+      renderer.domElement.removeEventListener('pointermove', onPointerMove)
+      renderer.domElement.removeEventListener('pointerup', onPointerUp)
+      renderer.domElement.removeEventListener('pointercancel', onPointerUp)
+      stage.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.geometry.dispose()
+          const materials = Array.isArray(object.material) ? object.material : [object.material]
+          materials.forEach((material) => material.dispose())
+        }
+      })
+      renderer.dispose()
+      renderer.domElement.remove()
+    }
+  }, [gender])
+
+  return <div ref={mountRef} className="mannequin-stage" aria-label={`${gender} 3D mannequin`} />
+}
