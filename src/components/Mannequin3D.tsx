@@ -9,6 +9,7 @@ export default function Mannequin3D({ gender }: Props) {
   useEffect(() => {
     const host = mountRef.current
     if (!host) return
+    const element: HTMLDivElement = host
     const scene = new THREE.Scene()
     scene.background = new THREE.Color('#171412')
     const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100)
@@ -18,7 +19,7 @@ export default function Mannequin3D({ gender }: Props) {
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    host.appendChild(renderer.domElement)
+    element.appendChild(renderer.domElement)
 
     scene.add(new THREE.HemisphereLight(0xfff4e9, 0x30251f, 2.1))
     const key = new THREE.DirectionalLight(0xffffff, 3.1)
@@ -93,13 +94,13 @@ export default function Mannequin3D({ gender }: Props) {
     const ring = new THREE.Mesh(new THREE.TorusGeometry(1.15,.008,8,80),new THREE.MeshBasicMaterial({color:'#6e4940'}))
     ring.rotation.x=Math.PI/2; ring.position.y=.012; scene.add(ring)
 
-    let width=host.clientWidth, height=host.clientHeight
+    let width=element.clientWidth, height=element.clientHeight
     function resize() {
-      width=Math.max(1,host.clientWidth); height=Math.max(1,host.clientHeight)
+      width=Math.max(1,element.clientWidth); height=Math.max(1,element.clientHeight)
       renderer.setSize(width,height,false); camera.aspect=width/height; camera.updateProjectionMatrix()
     }
     resize()
-    const observer = new ResizeObserver(resize); observer.observe(host)
+    const observer = new ResizeObserver(resize); observer.observe(element)
     let dragging=false, lastX=0, autoRotate=true, frame=0
     const down=(event:PointerEvent)=>{dragging=true;autoRotate=false;lastX=event.clientX;renderer.domElement.setPointerCapture(event.pointerId)}
     const move=(event:PointerEvent)=>{if(!dragging)return;root.rotation.y+=(event.clientX-lastX)*.012;lastX=event.clientX}
