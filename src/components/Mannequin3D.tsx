@@ -19,7 +19,6 @@ export default function Mannequin3D({ gender }: Props) {
       return
     }
 
-    let disposed = false
     setStatus('loading')
     const scene = new THREE.Scene()
     scene.background = new THREE.Color('#171412')
@@ -155,7 +154,6 @@ export default function Mannequin3D({ gender }: Props) {
     animate()
 
     return () => {
-      disposed = true
       cancelAnimationFrame(frame)
       observer.disconnect()
       renderer.domElement.removeEventListener('pointerdown', onPointerDown)
