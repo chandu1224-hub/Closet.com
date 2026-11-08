@@ -116,7 +116,7 @@ export default function Mannequin3D({ gender }: Props) {
       renderer.domElement.removeEventListener('pointerdown',down);renderer.domElement.removeEventListener('pointermove',move)
       renderer.domElement.removeEventListener('pointerup',up);renderer.domElement.removeEventListener('pointercancel',up)
       scene.traverse(object=>{if(object instanceof THREE.Mesh){object.geometry.dispose();const materials=Array.isArray(object.material)?object.material:[object.material];materials.forEach(material=>material.dispose())}})
-      renderer.dispose();if(host.contains(renderer.domElement))host.removeChild(renderer.domElement)
+      renderer.dispose();renderer.domElement.parentElement?.removeChild(renderer.domElement)
     }
   },[gender])
 
