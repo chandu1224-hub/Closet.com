@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from './lib/supabase'
 import Wardrobe from './components/Wardrobe'
 import Mannequin3D from './components/Mannequin3D'
+import TryMe from './components/TryMe'
 
 const navigation = [
   { label: 'Today’s Look', icon: '◷' },
@@ -96,6 +97,8 @@ export default function App() {
                 {closetCount !== 0 && <div className="create-closet-panel"><div><p className="eyebrow">YOUR DIGITAL WARDROBE</p><h3>{closetCount === null ? 'Checking your closet…' : 'Your closet is ready'}</h3><p>Manage your pieces and build new outfit combinations.</p></div><button className="primary-button" onClick={() => setActive('My Closet')}>OPEN MY CLOSET <span>↗</span></button></div>}
               </section>
             </>
+          ) : active === 'Mannequin' ? (
+            <TryMe userId={session.user.id} gender={mannequinGender} onGenderChange={setMannequinGender} />
           ) : active === 'My Closet' ? (
             <><div className="screen-toolbar closet-screen-toolbar"><div><p className="eyebrow">YOUR DIGITAL WARDROBE</p><p className="subtitle">Everything you own, all in one place.</p></div></div><Wardrobe userId={session.user.id} /></>
           ) : (
