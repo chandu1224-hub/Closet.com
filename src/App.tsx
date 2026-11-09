@@ -84,7 +84,7 @@ export default function App() {
               </div>
               <section className="mannequin-home">
                 <div className="mannequin-heading">
-                  <div><p className="eyebrow">MEET YOUR DIGITAL MANNEQUIN</p><h2>See your style in 3D.</h2><p className="subtitle">Your base look, ready for your wardrobe.</p></div>
+                  <div><p className="eyebrow">MEET YOUR DIGITAL MODELS</p><h2>See your outfit on a model.</h2><p className="subtitle">A shared model for exploring your wardrobe.</p></div>
                   <div className="gender-tabs" role="tablist" aria-label="Choose mannequin">
                     <button role="tab" aria-selected={mannequinGender === 'male'} className={mannequinGender === 'male' ? 'selected' : ''} onClick={() => setMannequinGender('male')}>MALE</button>
                     <button role="tab" aria-selected={mannequinGender === 'female'} className={mannequinGender === 'female' ? 'selected' : ''} onClick={() => setMannequinGender('female')}>FEMALE</button>

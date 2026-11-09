@@ -155,3 +155,9 @@ body{overscroll-behavior:none}
 }
 
 .mannequin-load-state{position:absolute;inset:0;z-index:3;display:grid;place-items:center;padding:20px;text-align:center;background:#171412;color:#c9bdb1;font:700 11px 'DM Sans';letter-spacing:1.4px;pointer-events:none}
+
+/* Fixed photorealistic shared model images */
+.mannequin-stage{height:510px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border-radius:10px;background:radial-gradient(ellipse at 50% 38%,#30313a 0%,#1b1c23 48%,#121216 100%);touch-action:pan-y;cursor:default}
+.mannequin-model-image{display:block;height:100%;width:100%;object-fit:contain;object-position:center bottom}
+.mannequin-stage .mannequin-look-label{right:16px;bottom:14px;top:auto;left:auto;padding:8px 10px;border:1px solid #ffffff22;border-radius:5px;background:#09090988;color:#c9c3bc;font-size:8px;letter-spacing:1.2px}
+@media(max-width:650px){.mannequin-stage{height:430px}.mannequin-model-image{max-width:100%}}
