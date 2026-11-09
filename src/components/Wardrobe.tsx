@@ -1,129 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
-
-const categories = [
-  ['shirt', 'Shirts'], ['t_shirt', 'T-shirts'], ['trousers', 'Trousers'],
-  ['jeans', 'Jeans'], ['kurta', 'Kurtas'], ['dress', 'Dresses'],
-  ['skirt', 'Skirts'], ['jacket', 'Jackets'], ['blazer', 'Blazers'],
-  ['shorts', 'Shorts'], ['traditional', 'Traditional'], ['footwear', 'Footwear'],
-  ['accessory', 'Accessories'], ['other', 'Other'],
-] as const
-
-type WardrobeItem = {
-  id: string
-  name: string
-  category: string
-  primary_color: string | null
-  original_image_path: string | null
-  processing_status: string
-  created_at: string
-  imageUrl?: string
-}
-
-type Props = { userId: string }
-
-export default function Wardrobe({ userId }: Props) {
-  const [items, setItems] = useState<WardrobeItem[]>([])
-  const [category, setCategory] = useState('other')
-  const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
-  const [message, setMessage] = useState('')
-  const [filter, setFilter] = useState('all')
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  const loadItems = useCallback(async () => {
-    if (!supabase) return
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('wardrobe_items')
-      .select('id,name,category,primary_color,original_image_path,processing_status,created_at')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-    if (error) {
-      setMessage(error.message)
-      setLoading(false)
-      return
-    }
-    const withImages = await Promise.all((data ?? []).map(async item => {
-      if (!item.original_image_path) return item
-      const { data: signed } = await supabase!.storage.from('wardrobe-images').createSignedUrl(item.original_image_path, 3600)
-      return { ...item, imageUrl: signed?.signedUrl }
-    }))
-    setItems(withImages)
-    setLoading(false)
-  }, [userId])
-
-  useEffect(() => { void loadItems() }, [loadItems])
-
-  async function uploadFiles(fileList: FileList | null) {
-    if (!supabase || !fileList?.length) return
-    const files = Array.from(fileList)
-    setUploading(true)
-    setMessage('')
-    let uploaded = 0
-    for (const file of files) {
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-        setMessage(`Skipped ${file.name}: use JPG, PNG or WebP images.`)
-        continue
-      }
-      if (file.size > 10 * 1024 * 1024) {
-        setMessage(`Skipped ${file.name}: image must be 10 MB or smaller.`)
-        continue
-      }
-      const id = crypto.randomUUID()
-      const extension = file.type === 'image/jpeg' ? 'jpg' : file.type.split('/')[1]
-      const path = `${userId}/${id}/original.${extension}`
-      const { error: storageError } = await supabase.storage.from('wardrobe-images').upload(path, file, { contentType: file.type, upsert: false })
-      if (storageError) {
-        setMessage(`Could not upload ${file.name}: ${storageError.message}`)
-        continue
-      }
-      const name = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim() || 'Untitled item'
-      const { error: insertError } = await supabase.from('wardrobe_items').insert({
-        id, user_id: userId, name, category, original_image_path: path, processing_status: 'pending',
-      })
-      if (insertError) {
-        await supabase.storage.from('wardrobe-images').remove([path])
-        setMessage(`Could not save ${file.name}: ${insertError.message}`)
-        continue
-      }
-      uploaded += 1
-    }
-    if (uploaded) setMessage(`${uploaded} ${uploaded === 1 ? 'item' : 'items'} added to your closet.`)
-    setUploading(false)
-    if (inputRef.current) inputRef.current.value = ''
-    await loadItems()
-  }
-
-  async function deleteItem(item: WardrobeItem) {
-    if (!supabase || !window.confirm(`Remove “${item.name}” from your closet?`)) return
-    if (item.original_image_path) {
-      const { error: storageError } = await supabase.storage.from('wardrobe-images').remove([item.original_image_path])
-      if (storageError) { setMessage(storageError.message); return }
-    }
-    const { error } = await supabase.from('wardrobe_items').delete().eq('id', item.id).eq('user_id', userId)
-    if (error) setMessage(error.message)
-    else { setMessage('Item removed.'); await loadItems() }
-  }
-
-  const visibleItems = filter === 'all' ? items : items.filter(item => item.category === filter)
-
-  return (
-    <section className="wardrobe-page">
-      <div className="wardrobe-toolbar">
-        <div><p className="eyebrow">YOUR DIGITAL CLOSET</p><h2>{items.length} {items.length === 1 ? 'piece' : 'pieces'} in your wardrobe</h2><p className="subtitle">Add what you own. We’ll help organize the rest.</p></div>
-        <div className="upload-actions">
-          <select aria-label="Category for uploaded items" value={category} onChange={event => setCategory(event.target.value)}>
-            {categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-          </select>
-          <button className="primary-button" disabled={uploading} onClick={() => inputRef.current?.click()}>{uploading ? 'UPLOADING…' : '＋ ADD CLOTHES'}</button>
-          <input ref={inputRef} className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={event => void uploadFiles(event.target.files)} />
-        </div>
-      </div>
-      <div className="upload-hint">BULK UPLOAD · JPG, PNG OR WEBP · MAX 10 MB PER IMAGE</div>
-      {message && <p className="wardrobe-message" role="status">{message}</p>}
-      <div className="closet-filters"><button className={filter === 'all' ? 'selected' : ''} onClick={() => setFilter('all')}>ALL ITEMS</button>{categories.map(([value, label]) => items.some(item => item.category === value) && <button key={value} className={filter === value ? 'selected' : ''} onClick={() => setFilter(value)}>{label.toUpperCase()}</button>)}</div>
-      {loading ? <div className="closet-empty">LOADING YOUR WARDROBE…</div> : visibleItems.length ? <div className="wardrobe-grid">{visibleItems.map(item => <article className="wardrobe-item" key={item.id}><div className="wardrobe-image">{item.imageUrl ? <img src={item.imageUrl} alt={item.name} /> : <span>IMAGE PENDING</span>}<button onClick={() => void deleteItem(item)} aria-label={`Delete ${item.name}`}>×</button></div><div className="wardrobe-item-copy"><strong>{item.name}</strong><small>{categories.find(([value]) => value === item.category)?.[1] ?? 'Other'}</small></div></article>)}</div> : <div className="closet-empty"><span>✳</span><h3>Your closet starts with one piece.</h3><p>Upload individual photos or select multiple images at once. Your photos stay private to your account.</p><button className="primary-button" onClick={() => inputRef.current?.click()}>UPLOAD YOUR FIRST CLOTHES ↗</button></div>}
-    </section>
-  )
+const cats = [{value:'top',label:'Top'},{value:'bottom',label:'Bottom'},{value:'shoes',label:'Shoes'},{value:'outerwear',label:'Outerwear'},{value:'accessory',label:'Accessory'}] as const
+const formality = ['casual','formal','sport'] as const
+const seasons = ['spring','summer','autumn','winter','all-season'] as const
+const colors = ['neutral','warm','cool','bold','pastel'] as const
+type Cat = typeof cats[number]['value']; type Color = typeof colors[number]
+type Item = {id:string;name:string;category:string;category_group:Cat|null;primary_color:string|null;dominant_color_hex:string|null;color_family:Color|null;formality:string|null;season:string|null;is_clean:boolean;wear_count:number;last_worn_date:string|null;original_image_path:string|null;processing_status:string;created_at:string;imageUrl?:string}
+function getColor(file:File):Promise<{hex:string;family:Color}> { return new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{try{const c=document.createElement('canvas');c.width=c.height=40;const ctx=c.getContext('2d',{willReadFrequently:true});if(!ctx)throw Error('Canvas unavailable');ctx.drawImage(img,0,0,40,40);const d=ctx.getImageData(0,0,40,40).data;const bins=new Map<string,number>();for(let i=0;i<d.length;i+=4){if(d[i+3]<180)continue;const k=[Math.round(d[i]/32)*32,Math.round(d[i+1]/32)*32,Math.round(d[i+2]/32)*32].join(',');bins.set(k,(bins.get(k)||0)+1)}const key=[...bins].sort((a,b)=>b[1]-a[1])[0]?.[0]||'128,128,128';const [r,g,b]=key.split(',').map(Number);const hex='#'+[r,g,b].map(n=>Math.min(255,n).toString(16).padStart(2,'0')).join('');const max=Math.max(r,g,b),min=Math.min(r,g,b),delta=max-min,sat=max?delta/max:0,light=(max+min)/510;let h=0;if(delta)h=(max===r?((g-b)/delta)%6:max===g?(b-r)/delta+2:(r-g)/delta+4)*60;h=(h+360)%360;const family:Color=sat<.18||light<.12||light>.9?'neutral':light>.72&&sat<.55?'pastel':sat>.68?'bold':h<70||h>=330?'warm':'cool';resolve({hex,family})}catch(e){reject(e)}finally{URL.revokeObjectURL(url)}};img.onerror=()=>{URL.revokeObjectURL(url);reject(Error('Could not read image'))};img.src=url})}
+export default function Wardrobe({userId}:{userId:string}) {
+ const [items,setItems]=useState<Item[]>([]),[category,setCategory]=useState<Cat>('top'),[loading,setLoading]=useState(true),[uploading,setUploading]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState(''),[catFilter,setCatFilter]=useState('all'),[colorFilter,setColorFilter]=useState('all'),[formFilter,setFormFilter]=useState('all'),[saving,setSaving]=useState<string|null>(null);const input=useRef<HTMLInputElement>(null)
+ const load=useCallback(async()=>{if(!supabase){setError('Supabase is not configured');setLoading(false);return}setLoading(true);setError('');const {data,error:e}=await supabase.from('wardrobe_items').select('id,name,category,category_group,primary_color,dominant_color_hex,color_family,formality,season,is_clean,wear_count,last_worn_date,original_image_path,processing_status,created_at').eq('user_id',userId).order('created_at',{ascending:false});if(e){setError(e.message);setLoading(false);return}const rows=await Promise.all((data??[]).map(async item=>{if(!item.original_image_path)return item;const {data:signed}=await supabase!.storage.from('wardrobe-images').createSignedUrl(item.original_image_path,3600);return {...item,imageUrl:signed?.signedUrl}}));setItems(rows as Item[]);setLoading(false)},[userId])
+ useEffect(()=>{void load()},[load])
+ async function upload(files:FileList|null){if(!supabase||!files?.length)return;setUploading(true);setError('');setNotice('');let count=0;const failures:string[]=[];for(const file of Array.from(files)){if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024){failures.push(file.name+': use JPG/PNG/WebP up to 10 MB');continue}const id=crypto.randomUUID(),ext=file.type==='image/jpeg'?'jpg':file.type.split('/')[1],path=userId+'/'+id+'/original.'+ext;try{const color=await getColor(file);const {error:up}=await supabase.storage.from('wardrobe-images').upload(path,file,{contentType:file.type});if(up)throw up;const name=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim()||'Untitled item';const {error:ins}=await supabase.from('wardrobe_items').insert({id,user_id:userId,name,category,category_group:category,primary_color:color.hex,dominant_color_hex:color.hex,color_family:color.family,is_clean:true,wear_count:0,original_image_path:path,processing_status:'pending'});if(ins){await supabase.storage.from('wardrobe-images').remove([path]);throw ins}count++}catch(e){failures.push(file.name+': '+(e instanceof Error?e.message:'Upload failed'))}}if(count)setNotice(count+' item(s) added');if(failures.length)setError(failures.join(' · '));setUploading(false);if(input.current)input.current.value='';await load()}
+ async function update(item:Item,patch:Partial<Item>){if(!supabase)return;setSaving(item.id);setError('');const {error:e}=await supabase.from('wardrobe_items').update(patch).eq('id',item.id).eq('user_id',userId);if(e)setError(e.message);else{setItems(rows=>rows.map(x=>x.id===item.id?{...x,...patch}:x));setNotice('Saved')}setSaving(null)}
+ const visible=useMemo(()=>items.filter(x=>(catFilter==='all'||(x.category_group??x.category)===catFilter)&&(colorFilter==='all'||x.color_family===colorFilter)&&(formFilter==='all'||x.formality===formFilter)),[items,catFilter,colorFilter,formFilter])
+ return <section className="wardrobe-page"><div className="wardrobe-toolbar"><div><p className="eyebrow">YOUR DIGITAL CLOSET</p><h2>{items.length} pieces in your wardrobe</h2><p className="subtitle">Add your clothes and organize every detail.</p></div><div className="upload-actions"><select aria-label="Category for uploads" value={category} onChange={e=>setCategory(e.target.value as Cat)}>{cats.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select><button className="primary-button" disabled={uploading} onClick={()=>input.current?.click()}>{uploading?'UPLOADING…':'＋ ADD CLOTHES'}</button><input ref={input} className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple onChange={e=>void upload(e.target.files)}/></div></div><div className="upload-hint">CAMERA OR GALLERY · MULTIPLE PHOTOS · MAX 10 MB EACH</div>{notice&&<p className="wardrobe-message" role="status">{notice}</p>}{error&&<p className="wardrobe-message" role="alert">{error}</p>}<div className="closet-filters"><select value={catFilter} onChange={e=>setCatFilter(e.target.value)} aria-label="Filter category"><option value="all">All categories</option>{cats.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select><select value={colorFilter} onChange={e=>setColorFilter(e.target.value)} aria-label="Filter color"><option value="all">All colors</option>{colors.map(c=><option key={c} value={c}>{c}</option>)}</select><select value={formFilter} onChange={e=>setFormFilter(e.target.value)} aria-label="Filter formality"><option value="all">All formality</option>{formality.map(c=><option key={c} value={c}>{c}</option>)}</select></div>{loading?<div className="closet-empty" role="status">LOADING YOUR WARDROBE…</div>:visible.length?<div className="wardrobe-grid">{visible.map(item=><article className="wardrobe-item" key={item.id}><div className="wardrobe-image">{item.imageUrl?<img src={item.imageUrl} alt={item.name}/>:<span>IMAGE PREVIEW UNAVAILABLE</span>}</div><div className="wardrobe-item-copy"><strong>{item.name}</strong><label>Category<select value={item.category_group??'accessory'} disabled={saving===item.id} onChange={e=>void update(item,{category_group:e.target.value as Cat})}>{cats.map(c=><option key={c.value} value={c.value}>{c.label}</option>)}</select></label><label>Formality<select value={item.formality??''} onChange={e=>void update(item,{formality:e.target.value||null})}><option value="">Choose…</option>{formality.map(f=><option key={f} value={f}>{f}</option>)}</select></label><label>Season<select value={item.season??''} onChange={e=>void update(item,{season:e.target.value||null})}><option value="">Choose…</option>{seasons.map(s=><option key={s} value={s}>{s}</option>)}</select></label><label>Dominant color <input type="color" value={item.dominant_color_hex??'#888888'} onChange={e=>void update(item,{dominant_color_hex:e.target.value,primary_color:e.target.value})}/></label><small>{item.color_family??'unclassified'} · {item.dominant_color_hex??'no color'}</small><button className="outline-button" disabled={saving===item.id} onClick={()=>void update(item,{is_clean:!item.is_clean})}>{saving===item.id?'SAVING…':item.is_clean?'CLEAN · MARK IN LAUNDRY':'IN LAUNDRY · MARK CLEAN'}</button></div></article>)}</div>:<div className="closet-empty"><span>✳</span><h3>{items.length?'No items match these filters.':'Your closet starts with one piece.'}</h3><p>{items.length?'Try changing a filter.':'Take a photo or choose photos from your gallery. Your photos remain private.'}</p>{!items.length&&<button className="primary-button" onClick={()=>input.current?.click()}>UPLOAD YOUR FIRST CLOTHES ↗</button>}</div>}</section>
 }
