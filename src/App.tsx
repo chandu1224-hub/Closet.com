@@ -22,6 +22,12 @@ export default function App() {
   const [closetCount, setClosetCount] = useState<number | null>(null)
 
   useEffect(() => {
+    if ('serviceWorker' in navigator && import.meta.env.PROD) {
+      void navigator.serviceWorker.register('/sw.js').catch(error => console.error('PWA service worker registration failed:', error))
+    }
+  }, [])
+
+  useEffect(() => {
     if (!supabase) { setStarting(false); return }
     let alive = true
     async function startGuestSession() {
