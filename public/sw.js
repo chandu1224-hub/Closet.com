@@ -1,1 +1,46 @@
-const CACHE='closet-shell-v1',SHELL=['/','/manifest.webmanifest','/closet-icon.svg'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;e.respondWith(fetch(e.request).then(r=>{if(r.ok&&(e.request.mode==='navigate'||SHELL.includes(new URL(e.request.url).pathname)))caches.open(CACHE).then(c=>c.put(e.request,r.clone()));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('/'))))});
+const CACHE = 'closet-shell-v2';
+const SHELL = ['/', '/manifest.webmanifest', '/icons/closet-192.png', '/icons/closet-512.png', '/icons/closet-maskable-512.png'];
+
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith('closet-shell-') && key !== CACHE).map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+
+  // Never intercept Supabase API/storage traffic or signed URLs.
+  if (
+    url.origin !== self.location.origin ||
+    /(^|\/)rest\/v1(\/|$)/i.test(url.pathname) ||
+    /(^|\/)storage\/v1(\/|$)/i.test(url.pathname) ||
+    url.searchParams.has('token') ||
+    url.searchParams.has('signature')
+  ) return;
+
+  const isShellAsset = SHELL.includes(url.pathname);
+  if (request.mode !== 'navigate' && !isShellAsset) return;
+
+  event.respondWith((async () => {
+    try {
+      const response = await fetch(request);
+      if (response.ok) {
+        const cache = await caches.open(CACHE);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    } catch {
+      return (await caches.match(request)) || (await caches.match('/'));
+    }
+  })());
+});
